@@ -86,14 +86,14 @@ def printMoviesCant(movies,cant,head):
 def printMenu():
     print("Bienvenido")
     print("0- Cargar información en el catálogo")
-    print("1- Examinar las películas estrenadas en un año")
-    print("2- Examinar los programas de televisión agregados en un año ")
-    print("3- Encontrar el contenido donde participa un actor")
-    print("4- Encontrar el contenido por un genero particular")
-    print("5- Encontrar el contenido producido en un país")
-    print("6- Encontrar el contenido con un director involucrado")
-    print("7- Listar el TOP (N) de los géneros con más contenido")
-    print("8- Listar el TOP (N) de los actores con más participaciones")
+    print("1- Consultar los videojuegos de una plataforma en un rango de tiempo.")
+    print("2- ")
+    print("3- ")
+    print("4- ")
+    print("5- ")
+    print("6- ")
+    print("7- ")
+    print("8- ")
     print("9- Salir")
 
 
@@ -159,7 +159,21 @@ def playLoadData():
     print(f'Memoria Utilizada: {memory}')
 
 def playReq1():
-    pass
+    plat= input("Ingrese la plataforma de interés: ")
+    f_ini= datetime.strptime(input("Ingrese la fecha inicial: "), '%d/%m/%Y')
+    f_fin= datetime.strptime(input("Ingrese la fecha final: "),"%d/%m/%Y")
+    f_ini=datetime.strftime(f_ini,'%y-%m-%d')
+    f_fin=datetime.strftime(f_fin,'%y-%m-%d')
+    movies= controller.getReq1(catalog, plat, f_ini, f_fin)
+    os.system('cls')
+    print('============ Req No. 1 Inputs ============')
+    print(f'Movies released in the year: "{f_ini}"')
+    
+    print('\n============ Req No. 1 Answer ============')
+    print(f'There are only "{lt.size(movies)}" games between {f_ini} and {f_fin} of {plat}')
+    head=['type','release_year','title','duration','stream_service','director','cast']
+    printMoviesCant(movies,3,head) if lt.size(movies)>0 else print(f'\nThere are not "Movies" in {plat}\n')
+    #print('Tiempo de ejecución:',time,'ms')
 
 def playReq2():
     pass

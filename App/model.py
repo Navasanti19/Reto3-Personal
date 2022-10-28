@@ -25,6 +25,7 @@
  """
 
 
+from csv import list_dialects
 import config as cf
 import time
 from datetime import datetime
@@ -166,13 +167,11 @@ def crimesSize(analyzer,mapa):
     """
     return lt.size(analyzer[mapa])
 
-
 def indexHeight(analyzer,mapa):
     """
     Altura del arbol
     """
     return om.height(analyzer[mapa])
-
 
 def indexSize(analyzer,mapa):
     """
@@ -180,13 +179,11 @@ def indexSize(analyzer,mapa):
     """
     return om.size(analyzer[mapa])
 
-
 def minKey(analyzer,mapa):
     """
     Llave mas pequena
     """
     return om.minKey(analyzer[mapa])
-
 
 def maxKey(analyzer,mapa):
     """
@@ -194,10 +191,35 @@ def maxKey(analyzer,mapa):
     """
     return om.maxKey(analyzer[mapa])
 
+def getReq1(catalog, plat, f_ini,f_fin):
+    lst = om.values(catalog["juegos_fecha"], f_ini, f_fin)
+    lista_juegos=lt.newList('ARRAY_LIST')
+    for i in lt.iterator(lst):
+        print(i)
+        for j in lt.iterator(i['lstcrimes']):
+            if plat in j['Platforms']:
+                lt.addLast(lista_juegos,j)
+    mer.sort(lista_juegos, cmpReleaseDate)
+    return lista_juegos
+
+
+
 # Funciones de ordenamiento
 
-# Funciones de comparación
 
+# Funciones de comparación
+def cmpReleaseDate(movie1, movie2):
+    
+    if datetime.strptime(movie1['Release_Date'],"%y-%m-%d")==datetime.strptime(movie2['Release_Date'],"%y-%m-%d"):
+        if movie1['Name'].lower() < movie2['Name'].lower():
+            return 0
+        else:
+            return 1
+    elif datetime.strptime(movie1['Release_Date'],"%y-%m-%d")<datetime.strptime(movie2['Release_Date'],"%y-%m-%d"):
+        return 0
+    else:
+        return 1
+    
 def compareCantidad(date1, date2):
     """
     Compara dos fechas

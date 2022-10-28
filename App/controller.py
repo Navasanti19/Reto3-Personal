@@ -92,13 +92,11 @@ def dataSize(analyzer,mapa):
     """
     return model.crimesSize(analyzer,mapa)
 
-
 def indexHeight(analyzer,mapa):
     """
     Altura del indice (arbol)
     """
     return model.indexHeight(analyzer,mapa)
-
 
 def indexSize(analyzer,mapa):
     """
@@ -106,19 +104,21 @@ def indexSize(analyzer,mapa):
     """
     return model.indexSize(analyzer,mapa)
 
-
 def minKey(analyzer,mapa):
     """
     La menor llave del arbol
     """
     return model.minKey(analyzer,mapa)
 
-
 def maxKey(analyzer,mapa):
     """
     La mayor llave del arbol
     """
     return model.maxKey(analyzer,mapa)
+
+def getReq1(control, plat, f_ini,f_fin):
+    movies_anio=model.getReq1(control['model'],plat,f_ini,f_fin)
+    return movies_anio
 
 # Funciones de tiempo
 
