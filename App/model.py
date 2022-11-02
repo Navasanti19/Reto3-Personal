@@ -28,6 +28,7 @@
 from csv import list_dialects
 import config as cf
 import time
+from tabulate import tabulate
 from datetime import datetime
 import tracemalloc
 from DISClib.ADT import list as lt
@@ -80,7 +81,6 @@ def newCatalog():
 # Funciones para agregar informacion al catalogo
 
 def addJuego(analyzer, juego):
-
     lt.addLast(analyzer["juegos"], juego)
     updateJuegoFecha(analyzer["juegos_fecha"], juego)
     addMapNombreJuego(analyzer,juego['Game_Id'],juego['Name'])
@@ -107,7 +107,7 @@ def updateJuegoFecha(map, juego):
 
     entry = om.get(map, fecha)
     if entry is None:
-        fechaentry = newEntry(juego)
+        fechaentry = newEntry()
         om.put(map, fecha, fechaentry)
     else:
         fechaentry = me.getValue(entry)
@@ -123,7 +123,7 @@ def updateRecordIntentos(map, record):
 
     entry = om.get(map, intento)
     if entry is None:
-        fechaentry = newEntry(intento)
+        fechaentry = newEntry()
         om.put(map, intento, fechaentry)
     else:
         fechaentry = me.getValue(entry)
@@ -139,17 +139,16 @@ def updateRecordTiempo(map, record):
 
     entry = om.get(map, tiempo)
     if entry is None:
-        fechaentry = newEntry(tiempo)
+        fechaentry = newEntry()
         om.put(map, tiempo, fechaentry)
     else:
         fechaentry = me.getValue(entry)
     addIndex(fechaentry, record)
     return map
 
-def newEntry(crime):
+def newEntry():
     entry = {"lstcrimes": None, }
     entry['lstcrimes']=lt.newList('ARRAY_LIST')
-    addIndex(entry,crime)
     return entry
 
 def addIndex(areaentry, crime):
@@ -161,6 +160,28 @@ def addIndex(areaentry, crime):
 
 
 # Funciones de consulta
+
+def getReq1(catalog, plat, f_ini,f_fin):
+    lst = om.values(catalog["juegos_fecha"], f_ini, f_fin)
+    cuenta={}
+    n_plats=0
+    lista_juegos=lt.newList('ARRAY_LIST')
+    for i in lt.iterator(lst):
+        
+        for j in lt.iterator(i['lstcrimes']):
+            
+            if plat in j['Platforms']:
+                n_plats+=1
+                lt.addLast(lista_juegos,j)
+                if j['Release_Date'] in cuenta:
+                    lt.addLast(cuenta[j['Release_Date']],j)
+                else:
+                    cuenta[j['Release_Date']]=lt.newList('ARRAY_LIST')
+                    lt.addLast(cuenta[j['Release_Date']],j)
+    
+    mer.sort(lista_juegos, cmpReleaseDate)
+    return lista_juegos, cuenta, n_plats
+
 def crimesSize(analyzer,mapa):
     """
     Número de crimenes
@@ -190,19 +211,6 @@ def maxKey(analyzer,mapa):
     Llave mas grande
     """
     return om.maxKey(analyzer[mapa])
-
-def getReq1(catalog, plat, f_ini,f_fin):
-    lst = om.values(catalog["juegos_fecha"], f_ini, f_fin)
-    lista_juegos=lt.newList('ARRAY_LIST')
-    for i in lt.iterator(lst):
-        print(i)
-        for j in lt.iterator(i['lstcrimes']):
-            if plat in j['Platforms']:
-                lt.addLast(lista_juegos,j)
-    mer.sort(lista_juegos, cmpReleaseDate)
-    return lista_juegos
-
-
 
 # Funciones de ordenamiento
 

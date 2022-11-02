@@ -75,7 +75,7 @@ def loadJuegos(catalog,archiv):
     return catalog['juegos']
 
 def loadRecords(catalog,archiv):
-    booksfile = cf.data_dir + 'category_data_urf-8-'+archiv
+    booksfile = cf.data_dir + 'category_data_utf-8-'+archiv
     input_file = csv.DictReader(open(booksfile, encoding='utf-8'))
     for juego in input_file:
         

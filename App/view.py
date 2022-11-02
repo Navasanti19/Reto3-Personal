@@ -40,22 +40,50 @@ operación solicitada
 
 # Funciones de Print
 
-def printMovies(movies):
-    size = lt.size(movies)
+def printMoviesDetails(lista,cuenta,head1,head2,cant=3):
+    size = lt.size(lista)
+    
     if size:
-        headers = [list(movies['first']['info'].keys())]
-        table=[]
-        for movie in lt.iterator(movies):
-            table.append([movie['show_id'],movie['type'],movie['title'],movie['director'],movie['cast'],movie['country'],movie['date_added'],movie['release_year'],movie['rating'],movie['duration'],movie['listed_in'],movie['description'],movie['stream_service']])
-        print(tabulate(table,headers[0],tablefmt="grid",maxcolwidths=14))    
+        cont=1
+        table=['']
+        for i in lt.iterator(lista):
+            if i[head1[0]] not in table[-1]:
+                aux=[]
+                for j in lt.iterator(cuenta[i[head1[0]]]):
+                    info=[]
+                    for k in range(len(head2)):
+                        info.append(j[head2[k]])
+                    aux.append(info)
+                table.append([i[head1[0]],lt.size(cuenta[i[head1[0]]]),tabulate(aux,head2,tablefmt="grid",maxcolwidths=20)])
+            if cont==cant:
+                break
+            else:
+                cont+=1
+        if size>=cant*2:
+            cont=0
+            for i in lt.iterator(lista):
+                
+                if i[head1[0]] not in table[-1] and size-cont<=cant:
+                    aux=[]
+                    for j in lt.iterator(cuenta[i[head1[0]]]):
+                        info=[]
+                        for k in range(len(head2)):
+                            info.append(j[head2[k]])
+                        aux.append(info)
+                    table.append([i[head1[0]],lt.size(cuenta[i[head1[0]]]),tabulate(aux,head2,tablefmt="grid",maxcolwidths=20)])
+                if size-cont==0:
+                    break
+                else:
+                    cont+=1
+
+        print(tabulate(table[1:],head1,tablefmt="grid"))    
         print('\n')    
     else:
-        print('No se encontraron peliculas')
+        print('No hay contenido')
 
 def printMoviesCant(movies,cant,head):
     size = lt.size(movies)
     if size:
-        
         table=[]
         i=1
         for movie in lt.iterator(movies):
@@ -149,30 +177,35 @@ def playLoadData():
     print('----------------------------------')
     
     print('\n------ Game Content ------')   
-    head=["Name",'Genres','Platforms','Total_Runs','Release_Date']
+    head=['Game_Id','Release_Date',"Name",'Abbreviation','Platforms','Total_Runs','Genres']
     printMoviesCant(juegos,3,head)
     
     print('\n------ SpeedRuns Content ------')   
-    head=["Name",'Category','Subcategory','Players_0','Country_0','Time_0','Record_Date_0']
+    head=['Game_Id','Record_Date_0','Num_Runs',"Name",'Category','Subcategory','Country_0','Players_0','Time_0']
     printMoviesCant(records,3,head)
     print(f'Tiempo de ejecución: {time:.3f}')
     print(f'Memoria Utilizada: {memory}')
 
 def playReq1():
     plat= input("Ingrese la plataforma de interés: ")
-    f_ini= datetime.strptime(input("Ingrese la fecha inicial: "), '%d/%m/%Y')
-    f_fin= datetime.strptime(input("Ingrese la fecha final: "),"%d/%m/%Y")
+    f_ini= datetime.strptime(input("Ingrese la fecha inicial: "), '%Y-%m-%d')
+    f_fin= datetime.strptime(input("Ingrese la fecha final: "),"%Y-%m-%d")
     f_ini=datetime.strftime(f_ini,'%y-%m-%d')
     f_fin=datetime.strftime(f_fin,'%y-%m-%d')
-    movies= controller.getReq1(catalog, plat, f_ini, f_fin)
+    lista_juegos,cuenta,num_plats= controller.getReq1(catalog, plat, f_ini, f_fin)
     os.system('cls')
     print('============ Req No. 1 Inputs ============')
-    print(f'Movies released in the year: "{f_ini}"')
+    print(f'Games released between {f_ini} and {f_fin}')
+    print(f'In platform: "{plat}"')
     
     print('\n============ Req No. 1 Answer ============')
-    print(f'There are only "{lt.size(movies)}" games between {f_ini} and {f_fin} of {plat}')
-    head=['type','release_year','title','duration','stream_service','director','cast']
-    printMoviesCant(movies,3,head) if lt.size(movies)>0 else print(f'\nThere are not "Movies" in {plat}\n')
+    print(f'Available games in {plat}: {num_plats}')
+    print(f'Date range between {f_ini} and {f_fin}')
+    print(f'Released Games: {lt.size(lista_juegos)}')
+
+    head=['Release_Date','Count','Details']
+    head_2=["Total_Runs",'Name','Abbreviation','Platforms','Genres']
+    printMoviesDetails(lista_juegos,cuenta,head,head_2,3) 
     #print('Tiempo de ejecución:',time,'ms')
 
 def playReq2():
