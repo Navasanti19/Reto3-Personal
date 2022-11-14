@@ -29,7 +29,9 @@ from csv import list_dialects
 import math
 import config as cf
 import time
+import folium
 from tabulate import tabulate
+from folium.plugins import MarkerCluster
 from datetime import datetime
 import tracemalloc
 from DISClib.ADT import list as lt
@@ -46,6 +48,7 @@ los mismos.
 """
 
 # Construccion de modelos
+
 
 def newCatalog():
     """
@@ -90,9 +93,19 @@ def newCatalog():
                                    loadfactor=0.5,
                                    comparefunction=None)
     
+    catalog['paises'] = mp.newMap(100,
+                                   maptype='PROBING',
+                                   loadfactor=0.5,
+                                   comparefunction=None)
+    
     return catalog
 
 # Funciones para agregar informacion al catalogo
+def addPais(analyzer,pais):
+    exist = mp.contains(analyzer['paises'], pais['name'].lower())
+    if not exist:
+        mp.put(analyzer['paises'], pais['name'].lower(), [pais['latitude'],pais['longitude']])
+
 
 def addJuego(analyzer, juego):
     lt.addLast(analyzer["juegos"], juego)
@@ -426,6 +439,47 @@ def getReq7(catalog, plat, top):
 
     return top_n, cuenta,total
 
+def getReq8(catalog,fecha, t_ini,t_fin):
+    lst = om.values(catalog["record_tiempo"], t_ini, t_fin)
+    cuenta={}
+    cantidad=0
+    for i in lt.iterator(lst):
+        for j in lt.iterator(i['lstcrimes']):
+            if fecha[2:] == j['Release_Date'][:2]:
+                
+                pais=j['Country_0'].lower()
+                if ',' in pais:
+                    pais=pais.split(',')
+                    listica=[]
+                    for k in pais:
+                        if k!='Unknown' and k not in listica:
+                            cantidad+=1
+                            if k not in cuenta:
+                                cuenta[k]=1
+                            else:
+                                cuenta[k]+=1
+                            listica.append(k)
+                else:
+
+                    if pais not in cuenta:
+                        cuenta[pais]=1
+                    else:
+                        cuenta[pais]+=1
+                    cantidad+=1
+               
+    m = folium.Map(location=[22,0],zoom_start=1, tiles="cartodbpositron")
+    mc=MarkerCluster()
+    
+    for i in cuenta:
+        for _ in range(cuenta[i]):
+            try:
+                info_geo=mp.get(catalog['paises'],i)
+                mc.add_child(folium.CircleMarker(location=me.getValue(info_geo),radius=5,color="#3186cc",fill=True,fill_color="#3186cc"))
+            except:
+                pass
+    m.add_child(mc)
+    m.save("paises.html")
+    return cantidad
 
 def crimesSize(analyzer,mapa):
     """

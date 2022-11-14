@@ -23,6 +23,7 @@
 import config as cf
 import sys
 import controller
+import webbrowser
 from tabulate import tabulate
 import os
 from DISClib.ADT import list as lt
@@ -120,9 +121,9 @@ def printMenu():
     print("3- Consultar los juegos que estén entre un rango de intentos de record")
     print("4- Consultar los records que estén entre un rango de fecha")
     print("5- Consultar los records mas recientes entre un rango de tiempos")
-    print("6- ")
-    print("7- ")
-    print("8- ")
+    print("6- Diagramar un histograma según añp y propiedad deseada")
+    print("7- Consultar el top N de los juegos más rentables para retransmitir")
+    print("8- Graficar la distribución de los mejores tiempos en un año por país")
     print("9- Salir")
 
 
@@ -328,7 +329,25 @@ def playReq7():
     
 
 def playReq8():
-    pass
+    anio=input('Ingrese el año de interés: ')
+    f_ini= float(input("Ingrese el límite inferior de tiempo: "))
+    f_fin= float(input("Ingrese el límite superior de tiempo: "))
+    cantidad=controller.getReq8(catalog, anio,f_ini,f_fin)
+
+    os.system('cls')
+    print('============ Req No. 8 Inputs ============')
+    print(f'Find the games in {anio} that its better time is between {f_ini} minutes and {f_fin} minutes')
+    
+    print('\nFiltering records by year and time...')
+    print('Rendering the map...')
+
+    print('\n============ Req No. 8 Answer ============')
+    print(f'There are {cantidad} games in {anio} that its better time is between {f_ini} minutes and {f_fin} minutes')
+    print(f'Open the browser to see the map\n')
+    
+    webbrowser.open_new_tab('paises.html')
+    
+
 
 # Funciones Auxiliares
 

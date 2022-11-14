@@ -54,6 +54,7 @@ def loadData(control,archiv, memory = False):
     catalog = control['model']
     juegos= loadJuegos(catalog,archiv)
     record = loadRecords(catalog,archiv)
+    loadPaises(catalog)
 
     stop_time = getTime()
     delta_time = deltaTime(stop_time, start_time)
@@ -80,6 +81,13 @@ def loadRecords(catalog,archiv):
     for juego in input_file:
         model.addRecord(catalog, juego,juego['Game_Id'])
     return catalog['records']
+
+def loadPaises(catalog):
+    booksfile = cf.data_dir + 'paises_2016_geom_10.csv'
+    input_file = csv.DictReader(open(booksfile, encoding='utf-8'))
+    for juego in input_file:
+        model.addPais(catalog, juego)
+    
 
 # Funciones de ordenamiento
 
@@ -141,6 +149,10 @@ def getReq6(control,f_ini,f_fin, opcion, segmentos):
 
 def getReq7(control,plat,top):
     movies_anio=model.getReq7(control['model'],plat,top)
+    return movies_anio
+
+def getReq8(control,anio,t_ini,t_fin):
+    movies_anio=model.getReq8(control['model'],anio,t_ini,t_fin)
     return movies_anio
 
 # Funciones de tiempo
