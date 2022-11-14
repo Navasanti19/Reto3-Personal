@@ -33,7 +33,8 @@ csv.field_size_limit(2147483647)
 El controlador se encarga de mediar entre la vista y el modelo.
 """
 
-# Inicialización del Catálogo de libros
+# Inicialización del Catálogo de juegos
+
 def newController():
     """
     Crea una instancia del modelo
@@ -44,7 +45,9 @@ def newController():
     control['model'] = model.newCatalog()
     return control
 
+
 # Funciones para la carga de datos
+
 def loadData(control,archiv, memory = False):
     start_time = getTime()
     if memory:
@@ -89,39 +92,7 @@ def loadPaises(catalog):
         model.addPais(catalog, juego)
     
 
-# Funciones de ordenamiento
-
 # Funciones de consulta sobre el catálogo
-
-def dataSize(analyzer,mapa):
-    """
-    Numero de crimenes leidos
-    """
-    return model.crimesSize(analyzer,mapa)
-
-def indexHeight(analyzer,mapa):
-    """
-    Altura del indice (arbol)
-    """
-    return model.indexHeight(analyzer,mapa)
-
-def indexSize(analyzer,mapa):
-    """
-    Numero de nodos en el arbol
-    """
-    return model.indexSize(analyzer,mapa)
-
-def minKey(analyzer,mapa):
-    """
-    La menor llave del arbol
-    """
-    return model.minKey(analyzer,mapa)
-
-def maxKey(analyzer,mapa):
-    """
-    La mayor llave del arbol
-    """
-    return model.maxKey(analyzer,mapa)
 
 def getReq1(control, plat, f_ini,f_fin):
     movies_anio=model.getReq1(control['model'],plat,f_ini,f_fin)

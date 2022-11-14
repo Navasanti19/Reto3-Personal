@@ -49,7 +49,6 @@ los mismos.
 
 # Construccion de modelos
 
-
 def newCatalog():
     """
     Inicializa el catálogo de libros. Crea una lista vacia para guardar
@@ -100,12 +99,13 @@ def newCatalog():
     
     return catalog
 
+
 # Funciones para agregar informacion al catalogo
+
 def addPais(analyzer,pais):
     exist = mp.contains(analyzer['paises'], pais['name'].lower())
     if not exist:
         mp.put(analyzer['paises'], pais['name'].lower(), [pais['latitude'],pais['longitude']])
-
 
 def addJuego(analyzer, juego):
     lt.addLast(analyzer["juegos"], juego)
@@ -271,12 +271,11 @@ def addIndex(areaentry, crime):
     lt.addLast(lst, crime)
     return areaentry
 
-# Funciones para creacion de datos
-
 
 # Funciones de consulta
 
 def getReq1(catalog, plat, f_ini,f_fin):
+    start_time=getTime()
     lst = om.values(catalog["juegos_fecha"], f_ini, f_fin)
     cuenta={}
     n_plats=0
@@ -294,17 +293,21 @@ def getReq1(catalog, plat, f_ini,f_fin):
                     lt.addLast(cuenta[j['Release_Date']],j)
     
     mer.sort(lista_juegos, cmpReleaseDate)
-    return lista_juegos, cuenta, n_plats
+    end_time=getTime()
+    times=deltaTime(start_time,end_time)
+    return lista_juegos, cuenta, n_plats, round(times,3)
 
 def getReq2 (catalog, nombre):
-    
+    start_time=getTime()
     series = mp.get(catalog['jugadores'],nombre)
     series = me.getValue(series)['lstcrimes']
     mer.sort(series, cmpReleaseTime)
-    
-    return series
+    end_time=getTime()
+    times=deltaTime(start_time,end_time)
+    return series, round(times,3)
 
 def getReq3(catalog,f_ini,f_fin):
+    start_time=getTime()
     lst = om.values(catalog["record_intentos"], f_ini, f_fin)
     cuenta={}
     lista_juegos=lt.newList('ARRAY_LIST')
@@ -319,9 +322,12 @@ def getReq3(catalog,f_ini,f_fin):
             num=j['Num_Runs']
         mer.sort(cuenta[num], cmpReleaseTime)
     mer.sort(lista_juegos, cmpNumRuns)
-    return lista_juegos, cuenta
+    end_time=getTime()
+    times=deltaTime(start_time,end_time)
+    return lista_juegos, cuenta, round(times,3)
 
 def getReq4(catalog,f_ini,f_fin):
+    start_time=getTime()
     lst = om.values(catalog["records_fecha"], f_ini, f_fin)
     cuenta={}
     lista_juegos=lt.newList('ARRAY_LIST')
@@ -336,9 +342,12 @@ def getReq4(catalog,f_ini,f_fin):
             num=j['Record_Date_0']
         mer.sort(cuenta[num], cmpReleaseTime)
     mer.sort(lista_juegos, cmpRecordDate)
-    return lista_juegos, cuenta
+    end_time=getTime()
+    times=deltaTime(start_time,end_time)
+    return lista_juegos, cuenta, round(times,3)
 
 def getReq5(catalog,f_ini,f_fin):
+    start_time=getTime()
     lst = om.values(catalog["record_tiempo"], f_ini, f_fin)
     cuenta={}
     lista_juegos=lt.newList('ARRAY_LIST')
@@ -353,9 +362,12 @@ def getReq5(catalog,f_ini,f_fin):
             num=j['Time_0']
         mer.sort(cuenta[num], cmpRecordDate)
     mer.sort(lista_juegos, cmpReleaseTime)
-    return lista_juegos, cuenta
+    end_time=getTime()
+    times=deltaTime(start_time,end_time)
+    return lista_juegos, cuenta, round(times,3)
 
 def getReq6(catalog,f_ini,f_fin,opcion,segmentos):
+    start_time=getTime()
     lst = om.values(catalog["records_fecha2"], f_ini, f_fin)
     arbol=om.newMap(omaptype="RBT", comparefunction=compareCantidad)
     for i in lt.iterator(lst):
@@ -367,21 +379,26 @@ def getReq6(catalog,f_ini,f_fin,opcion,segmentos):
             times.append(float(j['Time_2'])) if j['Time_2']!='' else None
 
             if opcion=='Time_Avg':
-                avg=round((sum(times))/len(times),2)
+                avg=(sum(times))/len(times)
                 om.put(arbol,avg,j)
             else:
                 om.put(arbol,j[opcion],j)
-    rango=round((om.maxKey(arbol)-om.minKey(arbol))/segmentos,2)
+    rango=(om.maxKey(arbol)-om.minKey(arbol))/segmentos+0.002
     listica=[]
-    inicial=om.minKey(arbol)
+    inicial=round(om.minKey(arbol),2)
     for _ in range(segmentos):
-        lista_rango=om.values(arbol, inicial, inicial+rango)
-        listica.append([inicial, inicial+rango, lt.size(lista_rango)])
+        lista_rango=om.values(arbol, round(inicial,2), round(inicial+rango,2))
+        
+        listica.append([round(inicial,2),round(inicial+rango,2), lt.size(lista_rango)])
         inicial+=rango
+    
+    end_time=getTime()
+    times=deltaTime(start_time,end_time)
 
-    return arbol, listica
+    return arbol, listica, round(times,3)
 
 def getReq7(catalog, plat, top):
+    start_time=getTime()
     series = mp.get(catalog['Platforms'],plat)
     series = me.getValue(series)['lstcrimes']
     cuenta={}
@@ -402,7 +419,7 @@ def getReq7(catalog, plat, top):
 
 
             anio=int(i['Release_Date'][:2])
-            if anio>=0:
+            if anio>=0 and anio<=23:
                 anio=2000+anio
             else:
                 anio=1900+anio
@@ -410,20 +427,19 @@ def getReq7(catalog, plat, top):
             if anio>=2018:
                 antiquity=anio-2017
             elif anio>=1998:
-                antiquity= round(((-1/5)*anio)*404.6,2)
+                antiquity= round(((-0.2)*anio)+404.6,2)
             else:
                 antiquity=5
             
             popularity=round(math.log(float(i['Total_Runs'])),2)
-
             times=[]
             times.append(float(i['Time_0'])) if i['Time_0']!='' else None
             times.append(float(i['Time_1'])) if i['Time_1']!='' else None
             times.append(float(i['Time_2'])) if i['Time_2']!='' else None
             time_avg=round(sum(times)/len(times),2)
 
-            revenue=round((popularity*time_avg)/antiquity,2)
-
+            revenue=round((popularity*time_avg/60)/antiquity,2)
+        
             marketshare=cuenta[i['Name']]
 
             streamrevenue=round(revenue*marketshare,2)
@@ -433,13 +449,18 @@ def getReq7(catalog, plat, top):
             i['Stream_Revenue']=streamrevenue
         else:
             i['Stream_Revenue']=0
-
+            i['Market_Share']=0
+            i['Time_Avg']=0
+    
     mer.sort(series, cmpRevenue)
     top_n=lt.subList(series,1,top)
+    end_time=getTime()
+    times=deltaTime(start_time,end_time)
 
-    return top_n, cuenta,total
+    return top_n, cuenta,total, round(times,3)
 
 def getReq8(catalog,fecha, t_ini,t_fin):
+    start_time=getTime()
     lst = om.values(catalog["record_tiempo"], t_ini, t_fin)
     cuenta={}
     cantidad=0
@@ -455,66 +476,39 @@ def getReq8(catalog,fecha, t_ini,t_fin):
                         if k!='Unknown' and k not in listica:
                             cantidad+=1
                             if k not in cuenta:
-                                cuenta[k]=1
+                                cuenta[k]=lt.newList('ARRAY_LIST')
+                                lt.addLast(cuenta[k],j)
                             else:
-                                cuenta[k]+=1
+                                lt.addLast(cuenta[k],j)
                             listica.append(k)
                 else:
 
                     if pais not in cuenta:
-                        cuenta[pais]=1
+                        cuenta[pais]=lt.newList('ARRAY_LIST')
+                        lt.addLast(cuenta[pais],j)
                     else:
-                        cuenta[pais]+=1
+                        lt.addLast(cuenta[pais],j)
                     cantidad+=1
                
     m = folium.Map(location=[22,0],zoom_start=1, tiles="cartodbpositron")
     mc=MarkerCluster()
     
     for i in cuenta:
-        for _ in range(cuenta[i]):
+        for j in lt.iterator(cuenta[i]):
             try:
                 info_geo=mp.get(catalog['paises'],i)
-                mc.add_child(folium.CircleMarker(location=me.getValue(info_geo),radius=5,color="#3186cc",fill=True,fill_color="#3186cc"))
+                mc.add_child(folium.CircleMarker(popup=j['Name']+'\n'+j['Players_0']+'\n'+j['Time_0'],location=me.getValue(info_geo),radius=5,color="#3186cc",fill=True,fill_color="#3186cc"))
             except:
                 pass
     m.add_child(mc)
     m.save("paises.html")
-    return cantidad
-
-def crimesSize(analyzer,mapa):
-    """
-    Número de crimenes
-    """
-    return lt.size(analyzer[mapa])
-
-def indexHeight(analyzer,mapa):
-    """
-    Altura del arbol
-    """
-    return om.height(analyzer[mapa])
-
-def indexSize(analyzer,mapa):
-    """
-    Numero de elementos en el indice
-    """
-    return om.size(analyzer[mapa])
-
-def minKey(analyzer,mapa):
-    """
-    Llave mas pequena
-    """
-    return om.minKey(analyzer[mapa])
-
-def maxKey(analyzer,mapa):
-    """
-    Llave mas grande
-    """
-    return om.maxKey(analyzer[mapa])
-
-# Funciones de ordenamiento
+    end_time=getTime()
+    times=deltaTime(start_time,end_time)
+    return cantidad, round(times,3)
 
 
 # Funciones de comparación
+
 def cmpReleaseDate(movie1, movie2):
     
     if datetime.strptime(movie1['Release_Date'],"%y-%m-%d")==datetime.strptime(movie2['Release_Date'],"%y-%m-%d"):
@@ -571,3 +565,19 @@ def compareCantidad(date1, date2):
         return 1
     else:
         return -1
+
+
+#Funciones de Tiempo
+
+def getTime():
+    """
+    devuelve el instante tiempo de procesamiento en milisegundos
+    """
+    return float(time.perf_counter()*1000)
+
+def deltaTime(start, end):
+    """
+    devuelve la diferencia entre tiempos de procesamiento muestreados
+    """
+    elapsed = float(end - start)
+    return elapsed
