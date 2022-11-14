@@ -26,6 +26,7 @@
 
 
 from csv import list_dialects
+import math
 import config as cf
 import time
 from tabulate import tabulate
@@ -66,12 +67,25 @@ def newCatalog():
     
 
     catalog["juegos_fecha"] = om.newMap(omaptype="RBT", comparefunction=compareCantidad)
+    
+    catalog["records_fecha"] = om.newMap(omaptype="RBT", comparefunction=compareCantidad)
+    
+    catalog["records_fecha2"] = om.newMap(omaptype="RBT", comparefunction=compareCantidad)
                                       
     catalog["record_intentos"] = om.newMap(omaptype="RBT",comparefunction=compareCantidad)
                                       
     catalog["record_tiempo"] = om.newMap(omaptype="RBT",comparefunction=compareCantidad)
 
     catalog['id_juego'] = mp.newMap(100,
+                                   maptype='PROBING',
+                                   loadfactor=0.5,
+                                   comparefunction=None)
+    catalog['jugadores'] = mp.newMap(100,
+                                   maptype='PROBING',
+                                   loadfactor=0.5,
+                                   comparefunction=None)
+    
+    catalog['Platforms'] = mp.newMap(5,
                                    maptype='PROBING',
                                    loadfactor=0.5,
                                    comparefunction=None)
@@ -82,15 +96,21 @@ def newCatalog():
 
 def addJuego(analyzer, juego):
     lt.addLast(analyzer["juegos"], juego)
-    updateJuegoFecha(analyzer["juegos_fecha"], juego)
-    addMapNombreJuego(analyzer,juego['Game_Id'],juego['Name'])
+    addMapNombreJuego(analyzer,juego['Game_Id'],[juego,1])
     return analyzer
 
-def addRecord(analyzer, record, id):
-    record['Name'] = me.getValue(mp.get(analyzer['id_juego'],id))
+def addRecord(analyzer, record,id):
+    lst=["Abbreviation","Genres","Name",'Platforms','Release_Date','Total_Runs']
+    for i in lst:
+        record[i] = me.getValue(mp.get(analyzer['id_juego'],id))[0][i]
     lt.addLast(analyzer["records"], record)
+    updateJuegoFecha(analyzer["juegos_fecha"], record, analyzer['id_juego'])
     updateRecordIntentos(analyzer["record_intentos"], record)
     updateRecordTiempo(analyzer["record_tiempo"], record)
+    updateRecordFecha(analyzer["records_fecha"], record)
+    updateRecordFecha2(analyzer["records_fecha2"], record)
+    addMapJugador(analyzer,record['Players_0'],record)
+    addMapPlatform(analyzer,record['Platforms'],record)
     return analyzer
 
 def addMapNombreJuego(catalog,key,value):
@@ -98,7 +118,49 @@ def addMapNombreJuego(catalog,key,value):
     if not exist:
         mp.put(catalog['id_juego'], key, value)
 
-def updateJuegoFecha(map, juego):
+def addMapJugador(catalog,key,value):
+    exist = mp.contains(catalog['jugadores'], key)
+    if exist:
+        dicci = mp.get(catalog['jugadores'], key)
+        valor = me.getValue(dicci)
+    else:
+        valor = newEntry()
+        mp.put(catalog['jugadores'], key, valor)
+    lt.addLast(valor['lstcrimes'], value)
+
+def addMapPlatform(catalog,key,value):
+    plat=key
+    if ',' in plat:
+        plat=plat.split(', ')
+        for i in plat:
+            exist = mp.contains(catalog['Platforms'], i)
+            if exist:
+                dicci = mp.get(catalog['Platforms'], i)
+                valor = me.getValue(dicci)
+            else:
+                valor = newEntry()
+                mp.put(catalog['Platforms'], i, valor)
+            lt.addLast(valor['lstcrimes'], value)
+    elif plat=='':
+        exist = mp.contains(catalog['Platforms'], 'Unknown')
+        if exist:
+            dicci = mp.get(catalog['Platforms'], 'Unknown')
+            valor = me.getValue(dicci)
+        else:
+            valor = newEntry()
+            mp.put(catalog['Platforms'], 'Unknown', valor)
+        lt.addLast(valor['lstcrimes'], value)
+    else:
+        exist = mp.contains(catalog['Platforms'], plat)
+        if exist:
+            dicci = mp.get(catalog['Platforms'], plat)
+            valor = me.getValue(dicci)
+        else:
+            valor = newEntry()
+            mp.put(catalog['Platforms'], plat, valor)
+        lt.addLast(valor['lstcrimes'], value)
+
+def updateJuegoFecha(map, juego, mapid):
     
     if juego["Release_Date"] in [''," ", None]:
         fecha='00-00-00'
@@ -111,7 +173,13 @@ def updateJuegoFecha(map, juego):
         om.put(map, fecha, fechaentry)
     else:
         fechaentry = me.getValue(entry)
-    addIndex(fechaentry, juego)
+    
+    entry=mp.get(mapid,juego['Game_Id'])
+    
+    if me.getValue(entry)[1] !=0:
+        addIndex(fechaentry, juego)
+    me.setValue(entry,[juego,0])
+    
     return map
 
 def updateRecordIntentos(map, record):
@@ -146,6 +214,40 @@ def updateRecordTiempo(map, record):
     addIndex(fechaentry, record)
     return map
 
+def updateRecordFecha(map, juego):
+    
+    if juego["Record_Date_0"] in [''," ", None]:
+        fecha='00-00-00T00:00:00Z'
+    else:
+        fecha=juego['Record_Date_0']
+
+    entry = om.get(map, fecha)
+    if entry is None:
+        fechaentry = newEntry()
+        om.put(map, fecha, fechaentry)
+    else:
+        fechaentry = me.getValue(entry)
+    
+    addIndex(fechaentry, juego)
+    return map
+
+def updateRecordFecha2(map, juego):
+    
+    if juego["Release_Date"] in [''," ", None]:
+        fecha='00-00-00'
+    else:
+        fecha=juego['Release_Date']
+
+    entry = om.get(map, fecha)
+    if entry is None:
+        fechaentry = newEntry()
+        om.put(map, fecha, fechaentry)
+    else:
+        fechaentry = me.getValue(entry)
+    
+    addIndex(fechaentry, juego)
+    return map
+
 def newEntry():
     entry = {"lstcrimes": None, }
     entry['lstcrimes']=lt.newList('ARRAY_LIST')
@@ -167,7 +269,6 @@ def getReq1(catalog, plat, f_ini,f_fin):
     n_plats=0
     lista_juegos=lt.newList('ARRAY_LIST')
     for i in lt.iterator(lst):
-        
         for j in lt.iterator(i['lstcrimes']):
             
             if plat in j['Platforms']:
@@ -181,6 +282,150 @@ def getReq1(catalog, plat, f_ini,f_fin):
     
     mer.sort(lista_juegos, cmpReleaseDate)
     return lista_juegos, cuenta, n_plats
+
+def getReq2 (catalog, nombre):
+    
+    series = mp.get(catalog['jugadores'],nombre)
+    series = me.getValue(series)['lstcrimes']
+    mer.sort(series, cmpReleaseTime)
+    
+    return series
+
+def getReq3(catalog,f_ini,f_fin):
+    lst = om.values(catalog["record_intentos"], f_ini, f_fin)
+    cuenta={}
+    lista_juegos=lt.newList('ARRAY_LIST')
+    for i in lt.iterator(lst):
+        for j in lt.iterator(i['lstcrimes']):
+            if j['Num_Runs'] in cuenta:
+                lt.addLast(cuenta[j['Num_Runs']],j)
+            else:
+                lt.addLast(lista_juegos,j)
+                cuenta[j['Num_Runs']]=lt.newList('ARRAY_LIST')
+                lt.addLast(cuenta[j['Num_Runs']],j)
+            num=j['Num_Runs']
+        mer.sort(cuenta[num], cmpReleaseTime)
+    mer.sort(lista_juegos, cmpNumRuns)
+    return lista_juegos, cuenta
+
+def getReq4(catalog,f_ini,f_fin):
+    lst = om.values(catalog["records_fecha"], f_ini, f_fin)
+    cuenta={}
+    lista_juegos=lt.newList('ARRAY_LIST')
+    for i in lt.iterator(lst):
+        for j in lt.iterator(i['lstcrimes']):
+            if j['Record_Date_0'] in cuenta:
+                lt.addLast(cuenta[j['Record_Date_0']],j)
+            else:
+                lt.addLast(lista_juegos,j)
+                cuenta[j['Record_Date_0']]=lt.newList('ARRAY_LIST')
+                lt.addLast(cuenta[j['Record_Date_0']],j)
+            num=j['Record_Date_0']
+        mer.sort(cuenta[num], cmpReleaseTime)
+    mer.sort(lista_juegos, cmpRecordDate)
+    return lista_juegos, cuenta
+
+def getReq5(catalog,f_ini,f_fin):
+    lst = om.values(catalog["record_tiempo"], f_ini, f_fin)
+    cuenta={}
+    lista_juegos=lt.newList('ARRAY_LIST')
+    for i in lt.iterator(lst):
+        for j in lt.iterator(i['lstcrimes']):
+            if j['Time_0'] in cuenta:
+                lt.addLast(cuenta[j['Time_0']],j)
+            else:
+                lt.addLast(lista_juegos,j)
+                cuenta[j['Time_0']]=lt.newList('ARRAY_LIST')
+                lt.addLast(cuenta[j['Time_0']],j)
+            num=j['Time_0']
+        mer.sort(cuenta[num], cmpRecordDate)
+    mer.sort(lista_juegos, cmpReleaseTime)
+    return lista_juegos, cuenta
+
+def getReq6(catalog,f_ini,f_fin,opcion,segmentos):
+    lst = om.values(catalog["records_fecha2"], f_ini, f_fin)
+    arbol=om.newMap(omaptype="RBT", comparefunction=compareCantidad)
+    for i in lt.iterator(lst):
+        for j in lt.iterator(i['lstcrimes']):
+            
+            times=[]
+            times.append(float(j['Time_0'])) if j['Time_0']!='' else None
+            times.append(float(j['Time_1'])) if j['Time_1']!='' else None
+            times.append(float(j['Time_2'])) if j['Time_2']!='' else None
+
+            if opcion=='Time_Avg':
+                avg=round((sum(times))/len(times),2)
+                om.put(arbol,avg,j)
+            else:
+                om.put(arbol,j[opcion],j)
+    rango=round((om.maxKey(arbol)-om.minKey(arbol))/segmentos,2)
+    listica=[]
+    inicial=om.minKey(arbol)
+    for _ in range(segmentos):
+        lista_rango=om.values(arbol, inicial, inicial+rango)
+        listica.append([inicial, inicial+rango, lt.size(lista_rango)])
+        inicial+=rango
+
+    return arbol, listica
+
+def getReq7(catalog, plat, top):
+    series = mp.get(catalog['Platforms'],plat)
+    series = me.getValue(series)['lstcrimes']
+    cuenta={}
+    total=0
+    for i in lt.iterator(series):
+        if i['Misc']!='True':
+            total+=1
+    for i in lt.iterator(series):
+
+        if i['Misc']!='True':
+            contador=0
+            if i['Name'] not in cuenta:
+                for j in lt.iterator(series):
+                    if j['Misc']!='True' and j['Name']==i['Name']:
+                        contador+=1
+            
+                cuenta[i['Name']]=round(contador/total,2)
+
+
+            anio=int(i['Release_Date'][:2])
+            if anio>=0:
+                anio=2000+anio
+            else:
+                anio=1900+anio
+
+            if anio>=2018:
+                antiquity=anio-2017
+            elif anio>=1998:
+                antiquity= round(((-1/5)*anio)*404.6,2)
+            else:
+                antiquity=5
+            
+            popularity=round(math.log(float(i['Total_Runs'])),2)
+
+            times=[]
+            times.append(float(i['Time_0'])) if i['Time_0']!='' else None
+            times.append(float(i['Time_1'])) if i['Time_1']!='' else None
+            times.append(float(i['Time_2'])) if i['Time_2']!='' else None
+            time_avg=round(sum(times)/len(times),2)
+
+            revenue=round((popularity*time_avg)/antiquity,2)
+
+            marketshare=cuenta[i['Name']]
+
+            streamrevenue=round(revenue*marketshare,2)
+            
+            i['Market_Share']=marketshare
+            i['Time_Avg']=time_avg
+            i['Stream_Revenue']=streamrevenue
+        else:
+            i['Stream_Revenue']=0
+
+    mer.sort(series, cmpRevenue)
+    top_n=lt.subList(series,1,top)
+
+    return top_n, cuenta,total
+
 
 def crimesSize(analyzer,mapa):
     """
@@ -227,6 +472,40 @@ def cmpReleaseDate(movie1, movie2):
         return 0
     else:
         return 1
+
+def cmpRecordDate(movie1, movie2):
+
+    if movie1['Record_Date_0']<movie2['Record_Date_0']:
+        return 0
+    else:
+        return 1
+
+def cmpRevenue(movie1, movie2):
+
+    if movie1['Stream_Revenue']<movie2['Stream_Revenue']:
+        return 0
+    else:
+        return 1
+
+def cmpReleaseTime(movie1, movie2):
+    if movie1['Time_0']==movie2['Time_0']:
+        if datetime.strptime(movie1['Release_Date'],"%y-%m-%d")==datetime.strptime(movie2['Release_Date'],"%y-%m-%d"):
+            if movie1['Name'].lower() < movie2['Name'].lower():
+                return 0
+            else:
+                return 1
+        elif datetime.strptime(movie1['Release_Date'],"%y-%m-%d")<datetime.strptime(movie2['Release_Date'],"%y-%m-%d"):
+            return 0
+    elif float(movie1['Time_0'])<float(movie2['Time_0']):
+        return 1
+    else:
+        return 0
+
+def cmpNumRuns(movie1, movie2):
+    if movie1['Num_Runs']<movie2['Num_Runs']:
+        return 1
+    else:
+        return 0
     
 def compareCantidad(date1, date2):
     """

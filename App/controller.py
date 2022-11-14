@@ -78,8 +78,7 @@ def loadRecords(catalog,archiv):
     booksfile = cf.data_dir + 'category_data_utf-8-'+archiv
     input_file = csv.DictReader(open(booksfile, encoding='utf-8'))
     for juego in input_file:
-        
-        model.addRecord(catalog, juego, juego['Game_Id'])
+        model.addRecord(catalog, juego,juego['Game_Id'])
     return catalog['records']
 
 # Funciones de ordenamiento
@@ -118,6 +117,30 @@ def maxKey(analyzer,mapa):
 
 def getReq1(control, plat, f_ini,f_fin):
     movies_anio=model.getReq1(control['model'],plat,f_ini,f_fin)
+    return movies_anio
+
+def getReq2(control,nombre):
+    movies_anio=model.getReq2(control['model'],nombre)
+    return movies_anio
+
+def getReq3(control,f_ini,f_fin):
+    movies_anio=model.getReq3(control['model'],f_ini,f_fin)
+    return movies_anio
+
+def getReq4(control,f_ini,f_fin):
+    movies_anio=model.getReq4(control['model'],f_ini,f_fin)
+    return movies_anio
+
+def getReq5(control,f_ini,f_fin):
+    movies_anio=model.getReq5(control['model'],f_ini,f_fin)
+    return movies_anio
+
+def getReq6(control,f_ini,f_fin, opcion, segmentos):
+    movies_anio=model.getReq6(control['model'],f_ini,f_fin,opcion,segmentos)
+    return movies_anio
+
+def getReq7(control,plat,top):
+    movies_anio=model.getReq7(control['model'],plat,top)
     return movies_anio
 
 # Funciones de tiempo

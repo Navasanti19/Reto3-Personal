@@ -26,6 +26,7 @@ import controller
 from tabulate import tabulate
 import os
 from DISClib.ADT import list as lt
+from DISClib.ADT import orderedmap as om
 assert cf
 from datetime import datetime
 
@@ -47,7 +48,7 @@ def printMoviesDetails(lista,cuenta,head1,head2,cant=3):
         cont=1
         table=['']
         for i in lt.iterator(lista):
-            if i[head1[0]] not in table[-1]:
+            if str(i[head1[0]]) not in table[-1]:
                 aux=[]
                 for j in lt.iterator(cuenta[i[head1[0]]]):
                     info=[]
@@ -115,10 +116,10 @@ def printMenu():
     print("Bienvenido")
     print("0- Cargar información en el catálogo")
     print("1- Consultar los videojuegos de una plataforma en un rango de tiempo.")
-    print("2- ")
-    print("3- ")
-    print("4- ")
-    print("5- ")
+    print("2- Consultar records por jugador")
+    print("3- Consultar los juegos que estén entre un rango de intentos de record")
+    print("4- Consultar los records que estén entre un rango de fecha")
+    print("5- Consultar los records mas recientes entre un rango de tiempos")
     print("6- ")
     print("7- ")
     print("8- ")
@@ -164,7 +165,7 @@ def playLoadData():
     elif resp==7:
         archiv='80pct.csv'
     elif resp==8:
-        archiv='large.csv'
+        archiv='large,.csv'
     
     resp=input(('\nDesea Conocer la memoria utilizada? '))
     resp=castBoolean(resp)
@@ -209,25 +210,126 @@ def playReq1():
     #print('Tiempo de ejecución:',time,'ms')
 
 def playReq2():
-    pass
+    nombre= input("Ingrese el nombre del jugador a consultar: ")
+    lista_juegos= controller.getReq2(catalog, nombre)
+    os.system('cls')
+    print('============ Req No. 2 Inputs ============')
+    print(f'Speedrun records for player: {nombre}')
+    
+    print('\n============ Req No. 2 Answer ============')
+    print(f'Player {nombre} has {lt.size(lista_juegos)} Speedrun record attemps')
+    print(f'Total records: {lt.size(lista_juegos)}')
+
+    head=['Time_0','Record_Date_0','Name','Players_0','Country_0','Num_Runs','Platforms','Genres','Category','Subcategory']
+    
+    printMoviesCant(lista_juegos, 5, head) 
+    #print('Tiempo de ejecución:',time,'ms')
 
 def playReq3():
-    pass
+    f_ini= int(input("Ingrese el límite inferior de intentos: "))
+    f_fin= int(input("Ingrese el límite superior de intentos: "))
+    lista_juegos,cuenta,num_plats= controller.getReq3(catalog, f_ini, f_fin)
+    os.system('cls')
+    print('============ Req No. 3 Inputs ============')
+    print(f'Category records between {f_ini} and {f_fin} attemps')
+    
+    print('\n============ Req No. 3 Answer ============')
+    print(f'Attemps between {f_ini} and {f_fin}')
+    print(f'Total records: {lt.size(lista_juegos)}')
+
+    head=['Num_Runs','Count','Details']
+    head_2=["Time_0",'Record_Date_0','Name','Players_0','Country_0','Platforms','Genres','Category','Subcategory','Release_Date']
+    printMoviesDetails(lista_juegos,cuenta,head,head_2,5) 
+    #print('Tiempo de ejecución:',time,'ms')
 
 def playReq4():
-    pass
+    f_ini= input("Ingrese la fecha inicial: ")
+    f_ini=f_ini+'T'+input('Ingrese la hora de la fecha inicial: ')+':00Z'
+    f_fin= input("Ingrese la fecha final: ")
+    f_fin=f_fin+'T'+input('Ingrese la hora de la fecha final: ')+':00Z'
+    lista_juegos,cuenta= controller.getReq2(catalog, f_ini, f_fin)
+    os.system('cls')
+    print('============ Req No. 4 Inputs ============')
+    print(f'Category records between {f_ini} and {f_fin} datetime')
+    
+    print('\n============ Req No. 4 Answer ============')
+    print(f'Attemps between {f_ini} and {f_fin}')
+    print(f'Total records: {lt.size(lista_juegos)}')
+
+    head=['Record_Date_0','Count','Details']
+    head_2=["Num_Runs",'Time_0','Name','Players_0','Country_0','Platforms','Genres','Category','Subcategory','Release_Date']
+    printMoviesDetails(lista_juegos,cuenta,head,head_2,3) 
+    #print('Tiempo de ejecución:',time,'ms')
 
 def playReq5():
-    pass
+    f_ini= float(input("Ingrese el límite inferior de tiempo: "))
+    f_fin= float(input("Ingrese el límite superior de tiempo: "))
+    lista_juegos,cuenta= controller.getReq5(catalog, f_ini, f_fin)
+    os.system('cls')
+    print('============ Req No. 3 Inputs ============')
+    print(f'Category records between {f_ini} and {f_fin} runtime')
+    
+    print('\n============ Req No. 3 Answer ============')
+    print(f'Attemps between {f_ini} and {f_fin}')
+    print(f'Total records: {lt.size(lista_juegos)}')
+
+    head=['Time_0','Count','Details']
+    head_2=['Record_Date_0','Num_Runs','Name','Players_0','Country_0','Platforms','Genres','Category','Subcategory','Release_Date']
+    printMoviesDetails(lista_juegos,cuenta,head,head_2,3) 
+    #print('Tiempo de ejecución:',time,'ms')
 
 def playReq6():
-    pass
+    opciones=['Time_0','Time_1','Time_2','Time_Avg','Num_Runs']
+    opcion= int(input("Ingrese la Opcion que desea consultar\n(1) Tiempo1\n(2) Tiempo 2\n(3) Tiempo 3\n(4) Promedio Tiempos\n(5) Intentos\n OPCION: "))
+    f_ini= input("Ingrese el límite inferior de año: ")
+    f_fin= input("Ingrese el límite superior de año: ")
+    segmentos= int(input('Ingrese numero de segmentos para el histograma: '))
+    niveles= int(input('Ingrese el numero de niveles para las marcas: '))
+    arbol, listica= controller.getReq6(catalog, f_ini[2:]+'-00-00T00:00:00Z', f_fin[2:]+'-12-31T23:59:59Z',opciones[opcion-1], segmentos)
+    
+    os.system('cls')
+    print('============ Req No. 6 Inputs ============')
+    print(f'Count map (histogram) of the feature {opciones[opcion-1]}')
+    print(f'Data between release years {f_ini} and {f_fin}')
+    print(f'Number of bins: {segmentos}')
+    print(f'Registered attemps per scale: {niveles}')
+    
+    print('\n============ Req No. 6 Answer ============')
+    print(f'There are {om.size(arbol)} attemps on record')
+    print(f'Lowest value: {listica[0][0]}')
+    print(f'Highest value: {listica[-1][0]}')
+    print(f'{opciones[opcion-1]} Histogram with {segmentos} bins and {niveles} attemps per mark lvl')
+
+    head=['bin','count','lvl', 'mark']
+    table=[]
+    for i in range(segmentos):
+        table.append([f'({listica[i][0]}, {listica[i][1]}]',listica[i][2],listica[i][2]//niveles,'*'*(listica[i][2]//niveles)])
+    print(tabulate(table,head,tablefmt="grid",maxcolwidths=30))
+    #print('Tiempo de ejecución:',time,'ms')
 
 def playReq7():
-    pass
+    nombre= input("Ingrese la plataforma de interés: ")
+    top= int(input("Que top desea consultar: "))
+    lista_juegos,cuenta,total= controller.getReq7(catalog, nombre, top)
+    os.system('cls')
+    print('============ Req No. 7 Inputs ============')
+    print(f'Find the TOP {top} games for {nombre} platform')
+    
+    print('\nFiltering records by platform...')
+    print('Removing miscelaneous streaming revenue...')
+
+    print('\n============ Req No. 7 Answer ============')
+    print(f'There are {total} records for {nombre}')
+    print(f'There are {len(cuenta)} unique games for {nombre}')
+
+    head=['Name','Release_Date','Platforms','Genres','Stream_Revenue','Market_Share','Time_Avg','Total_Runs']
+    
+    printMoviesCant(lista_juegos, top, head) 
+    
 
 def playReq8():
     pass
+
 # Funciones Auxiliares
 
 def castBoolean(value):
@@ -238,7 +340,6 @@ def castBoolean(value):
         return True
     else:
         return False
-
 
 """
 Menu principal
