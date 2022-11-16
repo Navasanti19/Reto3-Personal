@@ -372,7 +372,6 @@ def getReq6(catalog,f_ini,f_fin,opcion,segmentos):
     arbol=om.newMap(omaptype="RBT", comparefunction=compareCantidad)
     for i in lt.iterator(lst):
         for j in lt.iterator(i['lstcrimes']):
-            
             times=[]
             times.append(float(j['Time_0'])) if j['Time_0']!='' else None
             times.append(float(j['Time_1'])) if j['Time_1']!='' else None
@@ -395,7 +394,7 @@ def getReq6(catalog,f_ini,f_fin,opcion,segmentos):
     end_time=getTime()
     times=deltaTime(start_time,end_time)
 
-    return arbol, listica, round(times,3)
+    return arbol, listica,om.maxKey(arbol),round(times,3)
 
 def getReq7(catalog, plat, top):
     start_time=getTime()
@@ -405,19 +404,18 @@ def getReq7(catalog, plat, top):
     total=0
     for i in lt.iterator(series):
         if i['Misc']!='True':
+            if i['Name'] not in cuenta:
+                cuenta[i['Name']]=1
+            else:
+                cuenta[i['Name']]+=1
             total+=1
+
+    for i in cuenta:
+        cuenta[i]=round(cuenta[i]/total,2)
+
     for i in lt.iterator(series):
 
         if i['Misc']!='True':
-            contador=0
-            if i['Name'] not in cuenta:
-                for j in lt.iterator(series):
-                    if j['Misc']!='True' and j['Name']==i['Name']:
-                        contador+=1
-            
-                cuenta[i['Name']]=round(contador/total,2)
-
-
             anio=int(i['Release_Date'][:2])
             if anio>=0 and anio<=23:
                 anio=2000+anio

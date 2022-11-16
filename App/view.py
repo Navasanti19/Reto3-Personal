@@ -286,7 +286,7 @@ def playReq6():
     f_fin= input("Ingrese el límite superior de año: ")
     segmentos= int(input('Ingrese numero de segmentos para el histograma: '))
     niveles= int(input('Ingrese el numero de niveles para las marcas: '))
-    arbol, listica,time= controller.getReq6(catalog, f_ini[2:]+'-00-00T00:00:00Z', f_fin[2:]+'-12-31T23:59:59Z',opciones[opcion-1], segmentos)
+    arbol, listica,maxi,time= controller.getReq6(catalog, f_ini[2:]+'-00-00T00:00:00Z', f_fin[2:]+'-12-31T23:59:59Z',opciones[opcion-1], segmentos)
     
     os.system('cls')
     print('============ Req No. 6 Inputs ============')
@@ -298,7 +298,7 @@ def playReq6():
     print('\n============ Req No. 6 Answer ============')
     print(f'There are {om.size(arbol)} attemps on record')
     print(f'Lowest value: {listica[0][0]}')
-    print(f'Highest value: {listica[-1][0]}')
+    print(f'Highest value: {maxi}')
     print(f'{opciones[opcion-1]} Histogram with {segmentos} bins and {niveles} attemps per mark lvl')
 
     head=['bin','count','lvl', 'mark']
